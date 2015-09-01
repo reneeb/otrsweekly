@@ -15,7 +15,7 @@ sub startup {
   $r->get('/confirm')->to('guest#confirm');
 
   $r->get('/archive/:id' => { id => 0 } )->to( 'guest#archive' );
-  $r->get('/latest' )->to( 'guest#archive' );
+  $r->get('/latest' )->to( 'guest#latest' );
 
   my $admin = $r->under('/admin')->to( 'auth#admin' );
   $admin->get('/')->to( 'admin-newsletter#start' );
