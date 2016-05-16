@@ -1,0 +1,229 @@
+#!/usr/bin/env perl
+use Mojolicious::Lite;
+
+use Path::Tiny;
+use Text::MultiMarkdown qw/markdown/;
+
+plugin 'JSONConfig';
+
+if ( app->config->{app}->{reverse_proxy} ) {
+    $ENV{MOJO_REVERSE_PROXY} = 1;
+}
+
+app->secrets( [ app->config->{app}->{secret}  || 'laASSA2j1o11udk0582euf9u2$!"HASH{MD5}'] );
+app->mode( app->config->{app}->{mode}    || 'development' );
+
+any '/'         => \&start;
+any '/archive'  => \&archive;
+any '/latest'   => \&latest;
+any '/:week'    => [ week => qr/[0-9]+/ ]=> \&week;
+
+sub start {
+    my $c = shift;
+
+    $c->render(template => 'index');
+}
+
+sub latest {
+}
+
+sub archive {
+    my $c = shift;
+
+    my $archive = path( $self->app->home . '/doc/archive.md' )->slurp_utf8();
+    my $weeks   = markdown( $archive );
+
+    $c->stash( weeks => $weeks );
+    $c->render(template => 'archive');
+}
+
+sub week {
+    my $c = shift;
+
+    my $week = _render_week( $c->param('week') );
+
+    $c->stash( week_html => $week );
+    $c->render(template => 'week');
+}
+
+sub _render_week {
+    my ($self, $file, $dir) = @_;
+
+    $file =~ s/[^0-9-]//g;
+
+    $dir = $self->param('draft') ? 'drafts' : 'markdown';
+
+    my $path = $self->app->home . '/' . $dir . '/' . $file . '.md';
+    if (! -f $path ) {
+        return;
+    }
+
+    my $content = path( $path )->slurp_utf8;
+
+    my ($meta,$data) = split /\n\n/, $content, 2;
+
+    my ($date, $editor, $title) = $meta =~ m{
+      ^Date: \s+ (.*) \s+
+      ^Editor: \s+ (.*) \s+
+      ^Title: \s+ (.*) $
+    }xms;
+
+    (my $id = $title) =~ s{[^A-Za-z0-9-]}{}g;
+    my $html = markdown( $data );
+
+    my %week = (
+        date    => $date,
+        editor  => $editor,
+        title   => $title,
+        id      => $id,
+        path    => $file,
+        html    => $html,
+    );
+
+    return \%week;
+}
+
+
+app->start;
+__DATA__
+
+@@ index.html.ep
+% layout 'default';
+% title 'OTRSWeekly - Start';
+
+@@ archive.html.ep
+% layout 'default';
+% title 'OTRSWeekly - Archive';
+
+% for my $line ( @{ stash('weeks') // [] } ) {
+% }
+
+@@ week.html.ep
+% layout 'default';
+% title 'OTRSWeekly - Week ' . param( 'week' );
+%= $week_html
+
+@@ layouts/default.html.ep
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog.Feature-AddOns.de -- OTRS Erweiterungen -- Improve your service</title>
+    <meta name="description" content="">
+    <meta name="revisit-after" content="30 days">
+    <meta name="robots" content="index, follow">
+    <meta name="keywords" content="OTRS, AddOns, Newsletter">
+    
+    <!-- Bootstrap -->
+    <link href="http://feature-addons.de/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://feature-addons.de/css/feature-addons.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style type="text/css">
+        .meta { color: #acacac; font-size: 0.7em }
+    </style>
+  </head>
+  <body>
+
+    <div class="headbg">
+      <div class="jumbotron">
+        <div class="container">
+          <div class="inside">
+            <h1>Blog</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Haupt-Content -->
+    <div class="container">
+      <div class="row">
+        <section id="subpage">
+          <div class="col-md-12" style="padding-top:30px;">
+            <a href="<%= url_for('/1') %>" class="btn btn-default page-link">Start</a>
+          </div>
+        </section>
+      </div>
+      <div class="row">
+        <section id="subpage">
+          <div class="col-md-12" style="padding-top:30px;">
+            <div id="accordion" class="panel-group">
+              %= content
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <hr>
+
+    <section id="footer">
+      <div class="row">
+        <div class="col-md-6">
+          <div id="footer_box" class="second">
+            <h3>Holen Sie sich Support</h3>
+            <div class="inside">
+              <p><a href="http://otrs.Perl-Services.de" title="Perl-Services">Perl-Services.de</a></p>
+              <p>
+                Mit einem Supportvertrag für Ihr OTRS bekommen Sie schnelle und kompetente
+                Hilfe bei Problemen und Fragen mit OTRS. Darüber hinaus bekommen Sie als
+                Support-Kunde auch Rabatte auf die weiteren OTRS-Dienstleistungen von Perl-Services.de.
+              </p>
+              <p>
+                Wählen Sie eines der <a href="http://otrs.perl-services.de/support.html">drei bestehenden 
+                Support-Pakete</a> und nehmen Sie noch heute mit
+                uns <a href="http://feature-addons.de/contact">Kontakt</a> auf.
+              </p>
+            </div>
+          </div>
+          <div id="box_shd"></div>
+        </div>
+
+        <div class="col-md-6">
+          <div id="footer_box" class="third">
+            <h3>Kontaktieren Sie uns!</h3>
+            <div class="inside">
+              <p>
+                <a href="http://Perl-Services.de" title="Perl-Services">Perl-Services.de</a></p>
+              <p>
+                Renée Bäcker<br>
+                Bergfeldstr. 23<br>
+                D - 64560 Riedstadt</p>
+              <p>
+                Telefon: 0180-300 221 048 94<br>
+                <span style="font-size:10px;">(9 cent/Minute aus dem dt. Festnetz. Mobilfunkpreise abweichend.)</span></p>
+              <p>E-Mail: <a href="mailto:info@perl-services.de">info@perl-services.de</a><br>
+                Umsatzsteuer-ID: DE274867092
+              </p>
+            </div>
+          </div>
+          <div id="box_shd"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="inside">
+        <p>
+          <a style="padding-right:10px;" href="http://feature-addons.de/file/data_privacy">Datenschutz</a>
+          <a href="http://feature-addons.de/file/imprint">Impressum</a>
+        </p>
+      </div>
+    </footer>
+
+    <script src="http://feature-addons.de/js/jquery.min.js"></script>
+    <script src="http://feature-addons.de/js/bootstrap.min.js"></script>
+    <script src="http://feature-addons.de/js/custom.js"></script>
+    <!-- IE10-Anzeigefenster-Hack für Fehler auf Surface und Desktop-Windows-8 -->
+    <script src="http://feature-addons.de/js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
+

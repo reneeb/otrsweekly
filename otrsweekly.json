@@ -1,0 +1,10 @@
+{
+    "app" : {
+        "secret" : "JDLKFe2ejo13o139t0JLASJ231fjlkjg$§1%",
+        "mode" : "production",
+        "reverse_proxy" : 1
+    },
+    "hypnotoad" : {
+        "listen" : [ "http://127.0.0.1:8246" ]
+    }
+}
