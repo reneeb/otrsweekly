@@ -3,6 +3,7 @@ use Mojolicious::Lite;
 
 use Path::Tiny;
 use Text::MultiMarkdown qw/markdown/;
+use Time::Piece;
 
 plugin 'JSONConfig';
 
@@ -16,42 +17,109 @@ app->mode( app->config->{app}->{mode}    || 'development' );
 any '/'         => \&start;
 any '/archive'  => \&archive;
 any '/latest'   => \&latest;
-any '/:week'    => [ week => qr/[0-9]+/ ]=> \&week;
+any '/:week'    => [ week => qr/[0-9]{4}-[0-9]{2}/ ]=> \&week;
 
 sub start {
     my $c = shift;
+
+    my ($current_week, $next_monday) = _calc_dates( $c );
+    my $next_issue                   = $next_monday->dmy;
+
+    $c->stash(
+        next_issue   => $next_issue,
+        current_week => $current_week,
+    );
 
     $c->render(template => 'index');
 }
 
 sub latest {
+    my $c = shift;
+
+    my ($current_week) = _calc_dates( $c );
+
+    my $week = _render_week( $c, $current_week );
+
+    if ( !$week ) {
+        start( $c );
+        $c->res->code( 404 );
+        return;
+    }
+
+    $c->stash( week_data => $week );
+    $c->render(template => 'week');
+}
+
+sub _calc_dates {
+    my $c = shift;
+
+    my $now              = localtime;
+    my $last_monday_days = ( $now->day_of_week || 7 ) - 1;
+    my $seconds_diff     = $last_monday_days * 24 * 60 * 60;
+
+    my $last_monday = $now - $seconds_diff;
+    my $week        = _get_week_from_date( $last_monday );
+
+    if ( -f path( $c->app->home . '/markdown/' . $week . '.md' )->stringify ) {
+        $last_monday += 7 * 24 * 60 * 60;
+    }
+
+    my $current_week = _get_week_from_date( $last_monday - 7 * 24 * 60 * 60 );
+
+    return ( $current_week, $last_monday );
+}
+
+sub _get_week_from_date {
+    my ($date) = @_;
+
+    my ($week, $month, $year) = (
+        $date->week,
+        $date->mon,
+        $date->year,
+    );
+
+    if ( $week == 53 && $month == 1 ) {
+        $year--;
+    }
+    elsif ( $week == 1 && $month == 12 ) {
+        $year++;
+    }
+
+    return sprintf "%04d-%02d", $year, $week;
 }
 
 sub archive {
     my $c = shift;
 
-    my $archive = path( $self->app->home . '/doc/archive.md' )->slurp_utf8();
-    my $weeks   = markdown( $archive );
+    my $archive = path( $c->app->home . '/doc/archive.html' )->slurp_utf8();
 
-    $c->stash( weeks => $weeks );
+    $c->stash( weeks => $archive );
     $c->render(template => 'archive');
 }
 
 sub week {
     my $c = shift;
 
-    my $week = _render_week( $c->param('week') );
+    my $week = _render_week( $c, $c->param('week') );
 
-    $c->stash( week_html => $week );
+    if ( !$week ) {
+        start( $c );
+        $c->res->code( 404 );
+        return;
+    }
+
+    $c->stash( week_data => $week );
     $c->render(template => 'week');
 }
 
 sub _render_week {
-    my ($self, $file, $dir) = @_;
+    my ($self, $file) = @_;
+
+    return if !$file;
 
     $file =~ s/[^0-9-]//g;
 
-    $dir = $self->param('draft') ? 'drafts' : 'markdown';
+    my $dir = $self->param('draft') ? 'drafts' : 'markdown';
 
     my $path = $self->app->home . '/' . $dir . '/' . $file . '.md';
     if (! -f $path ) {
@@ -91,17 +159,26 @@ __DATA__
 % layout 'default';
 % title 'OTRSWeekly - Start';
 
+<h1>OTRSWeekly - the weekly newsletter about OTRS</h1>
+
+<p>Next issue on <%= $next_issue %>.</p>
+
+<p>Want to see the current newsletter? Check out the <a href="<%= url_for('/latest') %>">latest issue (<%= $current_week %>)</a>.</p>
+
 @@ archive.html.ep
 % layout 'default';
 % title 'OTRSWeekly - Archive';
 
-% for my $line ( @{ stash('weeks') // [] } ) {
-% }
+<h1>Archive of all OTRSWeekly editions:</h1>
+
+%== $weeks
 
 @@ week.html.ep
 % layout 'default';
 % title 'OTRSWeekly - Week ' . param( 'week' );
-%= $week_html
+<h1><%= $week_data->{title} %></h1>
+<div class="metadata"><%= $week_data->{date} %> // <%= $week_data->{editor} %></div>
+%== $week_data->{html}
 
 @@ layouts/default.html.ep
 <!DOCTYPE html>
@@ -110,15 +187,15 @@ __DATA__
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Blog.Feature-AddOns.de -- OTRS Erweiterungen -- Improve your service</title>
+    <title>OTRSWeekly - news about OTRS</title>
     <meta name="description" content="">
     <meta name="revisit-after" content="30 days">
     <meta name="robots" content="index, follow">
     <meta name="keywords" content="OTRS, AddOns, Newsletter">
     
     <!-- Bootstrap -->
-    <link href="http://feature-addons.de/css/bootstrap.min.css" rel="stylesheet">
-    <link href="http://feature-addons.de/css/feature-addons.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/custom.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -133,84 +210,38 @@ __DATA__
   </head>
   <body>
 
-    <div class="headbg">
-      <div class="jumbotron">
-        <div class="container">
-          <div class="inside">
-            <h1>Blog</h1>
-          </div>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">OTRS Weekly - weekly news around OTRS</a>
         </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="/">Home</a></li>
+            <li><a href="/latest">Latest</a></li>
+            <li><a href="/archive">Archive</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
       </div>
-    </div>
+    </nav>
 
-    <!-- Haupt-Content -->
     <div class="container">
-      <div class="row">
-        <section id="subpage">
-          <div class="col-md-12" style="padding-top:30px;">
-            <a href="<%= url_for('/1') %>" class="btn btn-default page-link">Start</a>
-          </div>
-        </section>
+
+      <div class="starter-template">
+%= content
       </div>
-      <div class="row">
-        <section id="subpage">
-          <div class="col-md-12" style="padding-top:30px;">
-            <div id="accordion" class="panel-group">
-              %= content
-            </div>
-          </div>
-        </section>
-      </div>
+
     </div>
 
     <hr>
 
-    <section id="footer">
-      <div class="row">
-        <div class="col-md-6">
-          <div id="footer_box" class="second">
-            <h3>Holen Sie sich Support</h3>
-            <div class="inside">
-              <p><a href="http://otrs.Perl-Services.de" title="Perl-Services">Perl-Services.de</a></p>
-              <p>
-                Mit einem Supportvertrag für Ihr OTRS bekommen Sie schnelle und kompetente
-                Hilfe bei Problemen und Fragen mit OTRS. Darüber hinaus bekommen Sie als
-                Support-Kunde auch Rabatte auf die weiteren OTRS-Dienstleistungen von Perl-Services.de.
-              </p>
-              <p>
-                Wählen Sie eines der <a href="http://otrs.perl-services.de/support.html">drei bestehenden 
-                Support-Pakete</a> und nehmen Sie noch heute mit
-                uns <a href="http://feature-addons.de/contact">Kontakt</a> auf.
-              </p>
-            </div>
-          </div>
-          <div id="box_shd"></div>
-        </div>
-
-        <div class="col-md-6">
-          <div id="footer_box" class="third">
-            <h3>Kontaktieren Sie uns!</h3>
-            <div class="inside">
-              <p>
-                <a href="http://Perl-Services.de" title="Perl-Services">Perl-Services.de</a></p>
-              <p>
-                Renée Bäcker<br>
-                Bergfeldstr. 23<br>
-                D - 64560 Riedstadt</p>
-              <p>
-                Telefon: 0180-300 221 048 94<br>
-                <span style="font-size:10px;">(9 cent/Minute aus dem dt. Festnetz. Mobilfunkpreise abweichend.)</span></p>
-              <p>E-Mail: <a href="mailto:info@perl-services.de">info@perl-services.de</a><br>
-                Umsatzsteuer-ID: DE274867092
-              </p>
-            </div>
-          </div>
-          <div id="box_shd"></div>
-        </div>
-      </div>
-    </section>
-
-    <footer>
+    <footer class="footer">
       <div class="inside">
         <p>
           <a style="padding-right:10px;" href="http://feature-addons.de/file/data_privacy">Datenschutz</a>
@@ -219,11 +250,10 @@ __DATA__
       </div>
     </footer>
 
-    <script src="http://feature-addons.de/js/jquery.min.js"></script>
-    <script src="http://feature-addons.de/js/bootstrap.min.js"></script>
-    <script src="http://feature-addons.de/js/custom.js"></script>
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
     <!-- IE10-Anzeigefenster-Hack für Fehler auf Surface und Desktop-Windows-8 -->
-    <script src="http://feature-addons.de/js/ie10-viewport-bug-workaround.js"></script>
+    <script src="/js/ie10-viewport-bug-workaround.js"></script>
   </body>
 </html>
 

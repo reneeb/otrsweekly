@@ -1,0 +1,28 @@
+body {
+  padding-top: 50px;
+}
+
+.starter-template {
+  padding: 40px 15px;
+}
+
+.metadata {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    width: 100%;
+    text-align: right;
+    font-style: italic;
+}
+
+p{
+    color: #000000;
+    font-size: 1.1em;
+}
+
+h2{
+    color: #d9230f;
+}
+
+footer {
+    margin-left: 20px;
+}
