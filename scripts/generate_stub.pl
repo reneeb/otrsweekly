@@ -27,7 +27,8 @@ my $content;
     $content = <DATA>;
 }
 
-path( Path::Tiny->cwd . '/drafts/' . $week . '.md' )->spew_utf8( $content );
+my $base_dir = path( __FILE__ )->parent(2)->stringify;
+path( $base_dir . '/drafts/' . $week . '.md' )->spew_utf8( $content );
 
 __DATA__
 Date: # TODO

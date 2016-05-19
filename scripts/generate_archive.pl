@@ -5,8 +5,9 @@ use warnings;
 
 use Path::Tiny;
 
-my $archive = path( Path::Tiny->cwd . '/doc/archive.html' );
-my $iter    = path( Path::Tiny->cwd . '/markdown' )->iterator;
+my $base_dir = path( __FILE__ )->parent(2)->stringify;
+my $archive  = path( $base_dir . '/doc/archive.html' );
+my $iter     = path( $base_dir . '/markdown' )->iterator;
 
 my @files;
 while ( my $file = $iter->() ) {
