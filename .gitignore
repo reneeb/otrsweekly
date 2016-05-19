@@ -1,3 +1,5 @@
 otrsweekly.json
 *.sw*
 TODO
+public/rss/*
+doc/archive.html
