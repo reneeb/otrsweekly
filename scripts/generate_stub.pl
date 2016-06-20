@@ -38,6 +38,17 @@ Title: # TODO
 
 #TODO: Intro
 
+If you find anything that
+might fit in this weekly newsletter, please drop me a line at
+
+`hints@otrsweekly.info`
+
+If you want to join me editing this newsletter, please drop me a line at
+
+`help@otrsweekly.info`
+
+Let's start with the news
+
 <hr>
 
 # Announcements
