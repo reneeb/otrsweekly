@@ -165,6 +165,32 @@ __DATA__
 
 <p>Want to see the current newsletter? Check out the <a href="<%= url_for('/latest') %>">latest issue (<%= $current_week %>)</a>.</p>
 
+<form id="nl2go--form" action="https://app.newsletter2go.com/de/recipients/index/subscribe/" method="post" accept-charset="utf-8">
+<table border="0"><tbody>
+<tr><td align="left" style="padding-right: 8px">E-Mail*
+    </td>
+    <td>
+        <input type="text" name="nl2go--mail" id="nl2go--mail" style="background: #f4f4f4; border: 1px solid #cccccc; padding: 2px; width: 250px;">
+    </td>
+</tr>
+<tr>
+    <td>
+        
+    </td><td align="center"><input type="submit" value="Subscribe to OTRSWeekly" name="nl2go--submit" id="nl2go--submit" style="cursor: pointer; border: 1px solid rgb(52, 116, 14); border-radius: 3px 3px 3px 3px; font-weight: bold; text-align: center; color: rgb(255, 255, 255); background-color: rgb(75, 166, 20); background-image: -moz-linear-gradient(center top , rgb(75, 166, 20), rgb(0, 140, 0)); padding: 4px 8px; text-shadow: -1px -1px 0px rgba(0, 0, 0, 0.3); font-size: 100%; margin-top: 8px;width: 100%;">
+<input type="hidden" name="nl2go--key" id="nl2go--key" value="d279f81efb1c406e0893df93066d4b59d0e5be403067e374621016cb7daf9768$12278">
+    </td>
+</tr>
+<tr>
+    <td>
+        
+    </td><td align="center"><input type="submit" value="Unsubscribe from OTRSWeekly" name="nl2go--unsubscribe" id="nl2go--unsubscribe" style="cursor: pointer; border:1px solid #d7dada; -webkit-border-radius: 3px; -moz-border-radius: 3px;border-radius: 3px; padding: 2px 4px; text-shadow: 0px 0px 0 rgba(0,0,0,0.3);font-weight:normal; text-align: center; color: #333333; background-color: #f4f5f5;  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f4f5f5), color-stop(100%, #dfdddd));  background-image: -webkit-linear-gradient(top, #f4f5f5, #dfdddd);  background-image: -moz-linear-gradient(top, #f4f5f5, #dfdddd);  background-image: -ms-linear-gradient(top, #f4f5f5, #dfdddd);  background-image: -o-linear-gradient(top, #f4f5f5, #dfdddd);  background-image: linear-gradient(top, #f4f5f5, #dfdddd);filter:progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr=#f4f5f5, endColorstr=#dfdddd); margin-top: 8px;width: 100%;">
+    </td>
+</tr>
+</tbody></table>
+</form>
+
+
+
 @@ archive.html.ep
 % layout 'default';
 % title 'OTRSWeekly - Archive';
