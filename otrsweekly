@@ -14,10 +14,18 @@ if ( app->config->{app}->{reverse_proxy} ) {
 app->secrets( [ app->config->{app}->{secret}  || 'laASSA2j1o11udk0582euf9u2$!"HASH{MD5}'] );
 app->mode( app->config->{app}->{mode}    || 'development' );
 
-any '/'         => \&start;
-any '/archive'  => \&archive;
-any '/latest'   => \&latest;
-any '/:week'    => [ week => qr/[0-9]{4}-[0-9]{2}/ ]=> \&week;
+any '/'        => \&start;
+any '/archive' => \&archive;
+any '/latest'  => \&latest;
+any '/:week'   => [ week => qr/[0-9]{4}-[0-9]{2}/ ]=> \&week;
+
+under '/subscription';
+
+any '/new'       => 'subscription-new';
+any '/confirmed' => 'subscription-confirmed';
+any '/double'    => 'subscription-double';
+any '/error'     => 'subscription-error';
+any '/leave'     => 'subscription-leave';
 
 sub start {
     my $c = shift;
@@ -283,3 +291,43 @@ __DATA__
   </body>
 </html>
 
+@@ subscription-new.html.ep
+% layout 'default';
+% title 'New Subscription';
+
+
+<h1>Please confirm your subscription</h1>
+
+<p>Thank you very much for subscribing to our newsletter. We have just sent you an e-mail to confirm your registration.</p>
+<p>Please click the confirmation link in this e-mail to complete your subscription.</p>
+
+
+@@ subscription-confirmed.html.ep
+% layout 'default';
+% title 'Welcome to OTRSWeekly';
+
+
+<h1>Newsletter subscription complete</h1>
+<p>You have successfully subscribed to our newsletter.</p>
+<p>We are happy to welcome you on our mailing list.</p>
+
+
+@@ subscription-double.html.ep
+% layout 'default';
+% title 'Welcome to OTRSWeekly';
+
+
+
+@@ subscription-leave.html.ep
+% layout 'default';
+% title 'Welcome to OTRSWeekly';
+
+
+
+@@ subscription-error.html.ep
+% layout 'default';
+% title 'Error';
+
+<h>Newsletter subscription failed.</h1>
+<p>An error has occurred during your login to our newsletter.</p>
+<p>Please try again and check your data.</p>
