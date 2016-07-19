@@ -328,6 +328,6 @@ __DATA__
 % layout 'default';
 % title 'Error';
 
-<h>Newsletter subscription failed.</h1>
+<h1>Newsletter subscription failed.</h1>
 <p>An error has occurred during your login to our newsletter.</p>
 <p>Please try again and check your data.</p>
