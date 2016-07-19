@@ -295,9 +295,7 @@ __DATA__
 % layout 'default';
 % title 'New Subscription';
 
-
 <h1>Please confirm your subscription</h1>
-
 <p>Thank you very much for subscribing to our newsletter. We have just sent you an e-mail to confirm your registration.</p>
 <p>Please click the confirmation link in this e-mail to complete your subscription.</p>
 
@@ -305,7 +303,6 @@ __DATA__
 @@ subscription-confirmed.html.ep
 % layout 'default';
 % title 'Welcome to OTRSWeekly';
-
 
 <h1>Newsletter subscription complete</h1>
 <p>You have successfully subscribed to our newsletter.</p>
@@ -316,6 +313,9 @@ __DATA__
 % layout 'default';
 % title 'Welcome to OTRSWeekly';
 
+<h1>You are already subscribed.</h1>
+<p>Thank you very much for your subscription to our newsletter.</p>
+<p>However, you are already subscribed.</p>
 
 
 @@ subscription-leave.html.ep
