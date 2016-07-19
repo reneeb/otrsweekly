@@ -28,7 +28,7 @@ my $content;
 }
 
 my $base_dir = path( __FILE__ )->parent(2)->stringify;
-path( $base_dir . '/drafts/' . $week . '.md' )->spew_utf8( $content );
+path( $base_dir . '/drafts/' . $week . '.md' )->touchpath->spew_utf8( $content );
 
 __DATA__
 Date: # TODO
