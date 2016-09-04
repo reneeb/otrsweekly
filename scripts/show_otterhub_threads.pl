@@ -16,6 +16,10 @@ my @forums   = qw(53 62 60 34 35 36);
 
 my $now = localtime;
 
+if ( $ARGV[0] ) {
+    $now = $now - $ARGV[0] * 24 * 60 * 60;
+}
+
 my @days;
 for my $diff_days ( 0 .. 7 ) {
     my $day = $now - $diff_days * 24 * 60 * 60;
